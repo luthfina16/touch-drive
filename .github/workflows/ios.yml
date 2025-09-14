@@ -1,0 +1,136 @@
+name: iOS starter workflow
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build and Test default scheme using any available iPhone simulator
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set Default Scheme
+        run: |
+          scheme_list=$(xcodebuild -list -json | tr -d "\n")
+          default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
+          echo $default | cat >default
+          echo Using default scheme: $default
+      - name: Build
+        env:
+          scheme: ${{ 'default' }}
+          platform: ${{ 'iOS Simulator' }}
+        run: |
+          # xcrun xctrace returns via stderr, not the expected stdout (see https://developer.apple.com/forums/thread/663959)
+          device=`xcrun xctrace list devices 2>&1 | grep -oE 'iPhone.*?[^\(]+' | head -1 | awk '{$1=$1;print}' | sed -e "s/ Simulator$//"`
+          if [ $scheme = default ]; then scheme=$(cat default); fi
+          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
+          file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
+          xcodebuild build-for-testing -scheme "$scheme" -"$filetype_parameter" "$file_to_build" -destination "platform=$platform,name=$device"
+      - name: Test
+        env:
+          scheme: ${{ 'default' }}
+          platform: ${{ 'iOS Simulator' }}
+        run: |
+          # xcrun xctrace returns via stderr, not the expected stdout (see https://developer.apple.com/forums/thread/663959)
+          device=`xcrun xctrace list devices 2>&1 | grep -oE 'iPhone.*?[^\(]+' | head -1 | awk '{$1=$1;print}' | sed -e "s/ Simulator$//"`
+          if [ $scheme = default ]; then scheme=$(cat default); fi
+          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
+          file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
+          xcodebuild test-without-building -scheme "$scheme" -"$filetype_parameter" "$file_to_build" -destination "platform=$platform,name=$device"
+y   #x žá+EPOC7‹l  
+ ª"(T€ýècá + `@                         €      	   „&     `@  œ       ü@  <D      ^  4E  #x W¶þÿ                
+*  `@   ÷
+f
+5	J V;  .D hxà$°ê®ààê½ðÎÞ B àì«€" ˜	˜©1Î 1 0 1_‹}âÛ! ×ës3 ’ç†ÐŠšI Rj  5=© ") ÙzI #ð"hIO§¹ h ,Ï¨_ ( ©Ó  §Ž¹n[q#Ð‘Y|V_§…]ŽE‡Cÿsÿ÷"„IW¨Î1 þÒøs]  “uG >±ðÑ*hq[¨f(¡ÍñQÖ —ŽW>µš¦‰1z½wãÀŸåÿ/áww;m¥w ;¾w`Àw€w`Àwww;4 Ÿå8@;-éwPãw 
+w á$@Ÿå$PŸå¢Tá8€½w”å0ÿ/á@;„;â¢Táúÿÿ;8€½èwwwwww!`üHpGßÎ)ùûJ`”2¾;B`¸+!`§¼0`A` A`I;`Á`aAaabbÁbcAccÁc@0A``aAa˜!à8Î8ì§õðµÿ°¾ÿ°¢ÿ°æKÀ;54;¤°hh¼1kDs®`ÐhÎöë m`+!ÎŒê0 !Îˆê(0ÿ!;-‚ê¿'¿ ÿ0;M0Î^üÿ8‘8ÀÎ;YüÀ'ÿ À€!Îìê;ÏIÀ@ö!Îjêœ"6ÑÈK2 4kDh¸¼6Ï!i`ÂKDð½ß¾ÎÔë;¾H;V8Î;Ø6Ð»H;W8Î;Ò6	Ð§¸0ÎëÎ;Šêx–ÿàÎÀëSÀCÎ;„êÎºëõpµ¢ÿ 0Î€êYŽ;Zÿ¾ÎRêYx;Íÿ§p½ßŽëÿ¾Î:ê§õß¾ H `”0``§¼0Îrë§¸0ÎÊê§Î;oøõsßÐŽéÿÎªëõ;“J :ß !Îîéõ ;õçÿµ° ; m
+hžŸgm™igm
+™;BigmÂhgm9 ‚hg(h  	s;ÝmYÂig°ð½óµ;‰° !%;vN•‘h ;>O 'p1¹¾ˆ1S«CÃÝ4ï¸ÿ•e§OÐ1¹¢à1S«CÃÝY‰;£ÿÒcZ `›5â–Ž;ÿÒ;YÙH1¹2 `2;UIn T1­ÅÝuïyÿeNf§€ñSJ[­1CÅÝu‰;eÿeDf§´1¹¢S@[«Ä1CÃÝYï;Qÿ0 Ò9ÙüØ;6I7w"P7Í=9ÿÒ/Ù;xØ;+›U$ÿÒ$ÙàØ!›ðUÿ  Ò;Z›53ù£Ù\Ø›tUäþ
+àÈ«w;œ¼w€wtwà¬wð­w,¯wÒüZQù›UÁ£òÙHñMî›lU¬£çÙ¸ñMä›ÜU—£ÞZQ;Û›$Uƒ£ÔÙ˜ØÐ›´U;n£ÊZQÇ›U;Z£ÀÙ\Ø½›;|U;E£¶ÙäØ³›Í=1£­ÙŒñM©›°U£;£Z › 53£™Ù€ñ–›;œ53óýÒ;Ùüñ Œ›“>uE¦Û;ßýÒ;†ÖsØ‚›@UÊýÒ;{ÙÌØ;x›ìUµýÒrZQ;o›$×;= = ýe;gf§°ñSd[¯À1CÇÝu‰Œýe^fg S;[[«1CÃÝ9 ïyý:h;Uf8 ;Lñ;Q›X¡“>uE¦–Ždý:hJf8 ñG›;œ¡“>u7 E¦–ŽNýe;?f§à1¹ S<[«ð1ƒÃÝï:ý0hj+ˆG S;4[«ƒÃ">E#Ž)ý2h/f+z;+›<×•ï;ý2h$f+tñM ›€×•ï ý2hf+;Øñ ›è×•ïëü2h;f+z[®1#ÆWw#>;àÐ¯wì°w$² s³w;L´wlµw¨¶w°·wø¸w¸«w0ºwšŽÁüeóf§zSð[¬1ƒÄÝu‰®ü°ð½ß Ž;Óüõ0µ°
+  _(þwq;Ùý©	œ~ø;ßI	œ~¤pÐ,Ñ  
+°0½qÄý©œiøÔL¨`h¤ Ðq³ýœXøoMÞç,JÑÊÕÎR¤}QÔçÆÕH9ÎI¤ÉÐËçÁL¨8@¤}SÂç½L¨l7¤;oÐo ·ç,;×Ñq;|ýœ!ø;±Õ´ ¤} ;¢ç®ÕÎ¤} šçªÕh¤Ð ‘çá¥ÕÄ¤}	 ;‡ç;¡{ý.
+ ;çÕH-ô. ;vç™Õ-ë. ;mç•{ã.
+ ;eç‘Õd-Ú. \çÕü-Ñ. ;Sç;‰{É‹Ð Kç;Mà;…Õ\-¿.; Aç€Õä-¶.; 8ç;}{®.; 0çyÕ˜-¥. 'ç;u{.; ç;qÕ;|-”. ç;mÕÈ-;‹. 
+çi{ƒ. ç;eÕp-;z‹;{Ð üæbLqr.; ôæ^L¨X-i‹!Ðo" éæ,dÑq®üq;SÿRÕ;¤-R.# ÔæNÕè-I‹JÐ$ ËæJLqA‹8Ðo Áæo ½æ,8Ñq‚üq'ÿ;3Õ`9_&. ¨æ9ÕÜ-.; Ÿæ)Õ 9_. –æ%Õ@9_‹Ð  æ	à Lq‹Ðo! ‚æ% €æ Ä"ßRX §*Ñ ŽRúõÿµ;°¾q$ÿW !qÜìxçÿ_2í™xHþn 	HT0@X‚SÀC *pÚ	
+j%*C;M¼;4 ;=/ ;? &
+bàpºw¬ s­wh®wˆ¯wˆ°w$²w´³wÌ´w8¶wX·w¸w_bî#'KK;K');.K;3@;La;g;v;{€;…;Š'''•K''»»;¢»K'K ™§_`íŸà†^íRà˜ !ª_ˆì­à˜ !_;„ì;°ð½†;fíAà†Tí<à†dís;6BÐ_Æì1àSà†Rís)BòÑÿ $à;†à§–_;¢ísB;EÐ_¬ì˜sÏ9wà;õIq²ì»ç§–_ íé?”ísBËÑ–š¨;Ó_šì;¦?Dí;ï?,íê?;Víå?Fíàç§–_`íÀ?;í;Õç§–_<íµç–¼?~íÈç™Ó;6û©q;Ýý™hF_ÉúvÅú™§ªkF_ríÇJ(2;gç™Óû©qÄý™hF_°úv¬ú™§ªkF_;Zí* ;Oç_;.ìPçÿµƒ° ž
+Ÿ $_øë¨ –—È;+ Ž;Öþ˜_òëà_bí_ôë¾à_\í_ì_\í  cÑM°ð½ ,ûÐ ùçÿµ;‡°¾
+w!‘
+™Ó(ì &žI
+˜öC_º6Ï&à™I
+˜-²6 Ñ &x’þ_ÞëYxóün ‘H@X;BMÀC *yÚ	
+j%*C% çù7À;5;›
+b)‘_&í&;?X;];x‘°;Ïò;ñð;ïîíìëêéèlv8ý_²ë¨hŠ
+Ñ4È-&ìsB}_¨ë™_ ì_žë®ävý_–ë(iŠ
+Ñ4Ð-"ìsB}_Œë™_$ìãçvý_~ëèhŠ
+Ñ4Ì-þ6B}_të™_øëÊç
+™_êëÅçvæü_`ëhiŠÑ4Ô-ôë àl? € @ààx0ãî® öï°â$0ú°ÎÊü¿Üë. & tÛh§àõW©°Gv/{ãWî¯è¦±6 =wËð‹‹ƒ°íDYG ðÐ~MòI<¥   ( ˜Cah˜VEüE ë’V-  ¿V™h ñE¹ h]yžÐEhRzZ„¨EÐ‰W7ŽšK! Ý]9N—[_* "hFQ×Ñ–¤ç>¨Oœ­(ÂÙ£J[çS•w OÐ& à@ .q€  à
+Ÿ
+Õ¸C‹h1EÅÌ !pGYOÆ	…ÏÃÑ) ÿ÷ê}ïO+ uhn™ÿµG˜G?á’Të}ôëªçÇ?Ëd?Dë¨iZ
+¡?ØÒ?Ôr:ë}?Öë‘çsÑÇ°d*ëÄ–(jZ¡ÜÒì’ëÔ)b}ì?rçsÑÇ‘d
+ëÄ–¨jZ¡äÒì’þêÔ©b} ì?SçÇ?tdîêèjZ
+¡ìÒæräáàë:çÜà?»à à›à?•àŠàkà?Qà?7ààÿçÇPd?Êê(kZ
+¡ðÒ‚rÀá|ëçà«u?ÄºuÇ3d?¬êhkZ
+¡ôÒPr¢áJëùæÇd”ê¨kZ
+¡øÒhrŠájëàæÇd?zêèkZ
+¡üÒBrpá?<ë?ÇæsÑÇæûE`êÄ–?xhZÑ]9 EFrTêÔ?y`}Bë©æ]
+™E2ëW Ñ?¤æE?Dê?¡æ]
+™Eëôç]EëðçÇ?·ûE0ê¸hZÝÿ1]	ÒÜê’?&áÚê|æsÑÇ›ûEêÄ–8iZ
+Ýÿ1]
+Ò?âê’êÔ9a}?Þê\æÇ?}ûEöé?xiZÝÿ1]Òrìé}ëBæS  Ë $E?²é™ ‘3 ¿( ¤ß?Ò?ý˜EªéÊEëE?¬égàEëEÎéEë " , Ð§èh¹?±?åÀhñh“GÀh h“GSgÉÈETé E€é E?Né E?zé+u–v¤ßj?ýÄh¦Ù
+™ý ?-Ñ0hÁh0 ˆG8x"Ciäh9 ¬ý{2 hV ™kF GE?DéEBél?åò?‰°  ŸÈEégEFé EéE@éš?’3u”
+™š( ß?/?ý èh2 ¹ ?.#Ñ¬E3û{ÁhVˆGÈEôè E"ébh¬?ÓELéÔ0 jFEäè{ÁhVˆGèh2 …úKh™ GEúèEøèEöè
+°ð½ò°u'ÈEÎègEúè0 ß?ÊûEé™0 ß+úë?M8?= Epê%?UH‹cHHHHHHHHHH‹†ŒHH‹°H?¾ ?Þ»€2_žUšèÚJ¥”UèÕ»42_ŠU?„èÐJ¥€U?zè?ÌJ¥?vUpè?ÈJ¥lUfèÁJX2oà?¿»€:_^UXè?¹J8:aà¸»|2_PUJè?¶J¥FU@è?±»\2_:U?6è?¬Jh:?>à0 ¼0E?²é?>à¢»@:_?&U"è »Ü2_Uè›» :_Uè–J@:à“»”:_<[VOþï?ŽJP:à˜ xØÑ?‡J 2[VOðïÄ'ðh: Ù™ý ?/Ñ{ÁhVˆGðh|K…P?;
+h
+™" ¨GOüï°ð½Àh ›hGóµ™°u'—?q?M˜ ?=)xh	ÆØ		@E?RèÆJè˜˜™‘™èÞèÈO®ïÂÚï®—OÎïàh¦…«?i©¸G˜O?ÈïÊE8éO?Êï0`àE2éOìïE2é˜™¼4C¯hhÜšÔà
+è´ù(x"CiÞ¨ý©
+³öï"	©
+³êâ¼ï	š #³?Æï!ª_?ÂèO?~â|ï˜?°ð½óµ™°u'—4?M—˜(?=)xh	ÆØ		@O?ØïÆ³Ðï˜˜™‘™³žïÞ³žïÈO2ïÂ`ï®—OTïàh¦…«?i©¸G˜OLïÊE?¾èOPï0`àE¸èO?rïE¸è˜™¼4C¯hhÜšÔ*à
+³Œï9ù(x"CiÞ¨ý©
+³|ï"	©
+³nâ@ï	š #³LïÊø«u`?­uX?·u¸upºuÐ®u!ª_^èOöîOôî˜?vçpµ   ˆ°"³ï]˜¨û?¡O?²îÆqæøW{Ð jx	‘B Ü‚¬Oðî( iFOï ?àjxØBÜà¬O?ÞîiF·þî  0`°p½pµg
+ ÿ°A! ?‡°?É ³îVß‹ùO?ÖîÞVþ÷ìÿÆ‚ Ú?H€X?Ã ÀC +CÐj%+C% ¼?5)b,ÐÜ)Ð)Ð) Ð)1Ñ·€ïà!)!Ð#)$Ð$)'Ñ1 Vß†þ?°°p½1 Vª«ß?~ÿš( ©O¸âšîîç1WÂLï÷ç·?tïóç!·´ïîç1 Vß?Ýþ?ÛçOˆî?Ø¾  Ë $O?Rî™ ‘3 ¿( ¤ßŠÿ˜OJîÊOºâLîgàO´ânîO´ï " , Ð§èh¹žäÀhñh“GÀh™h“GµY! 0OˆïÔVÀ0?ÉC`Á`aAaabbÁbcAccÁc@0A``aAa½ ?áçµY! 0OjïÔVÀ0?ÉC`Á`aAaabbÁbcAccÁc@0A``aAa½ ?áçøµg €?6pj¼1ÀW ‘	ÐYÔO(ï7Ñpj@@ pbàk% À?5'ÅW
+Ú)i¶Œ;àkÍàc kÓ©h¶^; kÍ c lÓéh¶\; lÍ ?d lÓii¶j; lÍ ?dàlÓ©i¶X;àlÍà?d mÅÕ(jZÐéi×¢; mÍ e`mÅÕ¨jZÐij×¢;`mÍ`e mÓéj¶Œ; mÍ eàmÓ)k¶?>;àmÍàe nÓik¶; nÍ f`nÓ©k¶F;`nÍ`f nÓék¶$; nÍ fàn?åù?5ÅWÚhhZÐ)h×?6;ànÍàfàoÓ©h¶ì?í¯àoÍà?g0hÅÕ(iZ
+Ðéh×îWÑ0hÍà?-?ru?Äºu0`phÓii¶2;phÍp`   		j)Ð)Ð@%(?õ?Û%(àhÙÑ "Ä"Ôýø½ ?âæ  Ö  ÖÖÖÖÖ|µ
+  hjxØ‚BÚ¬OÎìiF·îì·öì·øì $à"WÂèì!WÂŒìZôÑ|½0µ  hbxØ‚B?‡°Ú³¨ì.VO?ÈìVO?ÖìÊ{	?R³?œìV.O¸ì
+?¡³@ì "³ŠìÞ³oþW?ãÑ°0½µg?I¬O4ìYñ?Ä½?/u \?»uSgåRtQ&¹°ð½>Fk5ó¾É{‡?ß²Fk5Õ¾gå‡Á²†k5?·¾É{‡?£²†k5™çøµå íÉ Ù)Nø½{: ?ÃkV 1 ã Gø½ ?â¾gå‡h²l5^¾É{‡J²l5@¾gå‡,²Fl5"¾É{‡²Fl5¾gå‡ðæ>†l5ææSbU €¬ À  Ø ÀÄê ,´·>8îöÎßŒ¾ÌÎ† >2°«Ÿç ˜žñ|½ i9Ëinth ó( ?é… G0…   ÿµY Ðåð°GŒqanj_"]} ðY}'‡le  toÿ÷Ïe YðYYckÇ” (]To•ŒRƒ°er‹hs + odú›hF hàhL¡¼Cÿÿ‡ev0“‡% u]±½llatmòÿª’O Genh¦™ed! ‚ÍicÖ¾ß¯Ù^ÛµœÞ‡¢ánšx/te0 [£–P¥ ®‘
+ˆUÒæ ü—®©†lòÏzÈæøµYhU ñ  ç)Ëø½®: UÃlŒ 1 © Gø½ UâUçùWYh‘
+ˆ—æ ü—®©ÃÏzUæù ®‘
+ˆyæ ü—®©ÃÏzoæùWYh‘
+ˆU[æ ü—®©FÃÏzQæù ®‘
+ˆ=æ ü—®©FÃÏz3æùWYh
+‘ˆæ˜iFÁÁ©®Ï†Ãzæù ®
+‘ˆ æ˜iFÁÁ©®Ï†ÃzUõå|µYh
+ nŒUˆG®* UÃmÓ­˜G®iFBn¢Uóµÿ°ÿ°ÿ°UOUN¤°nDõlF…žêŒ!…úé0 !…öé(0ÿ!-1…ðéU¿%U­ / ÿ7m7ÿ0MVUÉûÿ8U‘8@…Äû@À€!…Zê=IÀ@ö!…ØéÓõ8…Žê 7œÑ" 6I¸bêàkÑ2L0K4ÓkDšhL9õ#“Xê+K: kDXh1 Vhê Ñ8“UVê(Ð%íC¸Lê!K( 3UDð½Á`!I` "aBÂ1U‚aA`UÂapGßWH `t0``&œÐŒVêŒV2ê “U?û¾œßÐæÿ…(ë¾pµYiº5œÑ(“ ê…Uºé)œ…"ê…´é  ap½Y€YtY´U»Yä½Yþµ% hU $	àÓ8“~ûEÐdöÕ -ÐyI¨…:é˜™Æþ½" 9 ¸xéþ½|µ h $	àÓ¸U^ûEÐdöÕ	à ,Ñ1 ­…é™Åb1œ“Péþµ
+ `I $ 1(“éœÑ(hU'Ê	(ÝA(“3ûE Ñ$(h:Y 	U›) ¸0éþ½)O¨…æè˜™Æþ½|µW
+ JI1(“îèCÐ )  “é) ­…Îè™Ä|µ h $	àÓ¸UùúEÐdöÕà ,Ý" 1œ“úè3I­9…U¬è™Å[° Y*UÚ ‚˜™ #8à .Ý $ %
+à˜!“ÎúE ÑmµBÐd˜ hÊ	 BÝµBìUÛà $äC˜a hÊ	UˆBØÝe	à˜)“U¯úEÑ^m˜ hÊ	¨BïÜ+˜™U[b…U¦è°ð½pµOº$àÓ¸U‘úE Ñmd0hÊ	 BUñÜ( p½YUüU»Y(ßÑ…6èUý÷Xíà(ÑHœÐÀFÀF  ¾”]ðUâéŒ¤þ…UÞNØNUÚNÔNUÖNÐNUÒNUÌNÎNÈNUÊé¸Æè…Äé “UÙUù…ÀéYÿ/Uá]Uq€‡‡	‡
+‡Ü‡å‡U¼‡U¶âU¹âUºâÁâÅâÈâUË„UÍ„‰
+‰Ð„"‰U<‰=‰U>‰U?‰K‰M‰Q¹U‰¹Ž¹U¹ã¹è¹ø¹Uý¹¶
+¶$¶%¶Q„*¶-¶U{¶~¶U„
+„„„„„+„„„„	„„„
+„„
+„„U„U„„U„„U„„„„„„„„„„ „!„"„#„$„%„U&„U'„„(„)„*„+„,„-„.„/„0„1„„2„3„4„:„U;„„„„	„„„„„ž„Ÿ„´„U·„U¸„½„„”(ßÐ…øUòïÚWH `0`` hUÌîŒ€î¾Y€½YŒUzîÔïß îÚÊ …UWøœÐ!h`ahA`Ú!îVPøHVMøHVJøH0€!îä8ÚUüí¾pµ †°îÊ¨†îŒîÊ­~î¨bî¨\î­\î­UVîU©­…
+øWõŽï( UŠïŒ°p½ßìíœÑ ¾  ÚÔí¾ pGßU!ÈíÚ@!Äí¾ U²°”°°¨€  Uõ¬€Ó>Ñã³Î]Ó>ÑãÇ³³>õU×¬€º>9è³Î]º>9èÇ³³>4 U·¬€ÓZ Õë³Î]ÓZ ÕëÇ³³>Uz —¬€Ó\ U£ì³Î]Ó\ U£ìÇ³³>| w¬€º>î³Î]º>îÇ³³>4 UW¬°°¨€ U 1þ›U¢U²°¤  U;¬°°¨€  5¬””]1.õ]IDY]/]$x U×Y]/ID ]/ID ]true”]false]
+]ôxt/pla;Y]ôxt/xml”¥m;alSecurity”Ahi§nÉi§<’root nÉfor a¿ t¥m;al control functionality]]FiŠSc{”Sh’fil’sc{ feÂur’deliv¥§ adm; a list of fiŠ§or 	fold¥§found&n d·×e ]UExecuô 5hi§nÉc{ b’usÒ  execut’fil’sc{ op¥Âion.]]UResults $hi§nÉwi¿®old <’sc{ results”
+]FiŠDeŠôY]DeŠô§a fil’or empty fold¥Y
+]D·×e±Y0h’parÌt nÉfor a¿ D·×e± relaôd nªes”]A»±ýiªYs]A»±ýiª&§{&nôg¥ <Â ô¿§aft¥®ow m{y m;uô§<’d·×’	wi¿ b’a»mÂ×a¿y l¡Ò&f not usÒ ]MaxA»±ýiª]J]MaxA»±ýiª&§{&nôg¥ <Â ô¿§maximum valu’of A»±ýiªY	¼L·el]UE¼ Švel ô¿§whe<¥ l¡&§ÌabŠd, {d whÂ typ’of l¡&t&s]²ªe”G²Éi§<’charact¥ seUquÌc’<Â&§neÒÒ  opÌ l¡Ò d·×e ²ªeM;LÌg<])²Ém;imum Šng<, 4-256 charact¥s]²ªeMaxLÌg<])²Émaximum Šnˆ€Øûë|ÀÓ…Œâô |Êþ÷
+°ðþïñ^GböÿOtr¡mJ0ð^z   bow îatÖ³ X Zer‡lGªe e%ÿs Reh¿er©½Mivd*¨€€€thšumö8$°inem••ùdhUpocanod caµleW¹onf‹orû{st\ >"tials Zkicoºred 77f ou\gh”b)w|ec~r@—]eG«LŠTÊó­Cþ™i%be†zt) ƒ‹µsst ±§»¤¸arJgen¼Ž¾^\ïÇÐ¶]" =ac(Ëf|®hœ. y Ÿ ap÷žpa¤Ào Î eom, ë$usG°nÌÒ ol›ipúí¹g>ó4-256^Ñs½&quiŽUpp)AndL)ŒFI‘Äablñƒ±Ìmu~taJo> upp) \l)^as"`t¶s½&quiŽC(sAndN¥s;I‘Äablñƒ±Ìmu~taJo>^(%\n¥‰+ax&peedCÑsn®ell%h m\Ü†m#a sÀl"cÑÉ"õñJ a ²dÛ	V‡u#´tweÄ 0 \4ónÊ½Hi~|yBuff)Hi~|yuff) øpŽvioõlÜõñlŠ^§sÛn¯	1-XÎ·lŠ^Ìcnmch·pŽvi’%lŠ^§‰½Expir_<Ö"²expiŽ%af¶ daysón¯1-365Œ+JC–eTù)\ce`Ö"õ)É^–"ƒ²zlÜ†m#´Ò"'im@^–"	J¶v‡' h’r%ha%þedŒ+JC–eIn¶v‡„Ö"õ)Énot^–"ƒ²m|">'im@^–"tù)\ce' 	†m#´Ò"h’r%hav"þñsJc"ƒpŽvi’%c–eŒ½Ch›kS}SÀsŒoN¯1ðTh"²dÉnmch a J·seºo‘	î%g6Äy·nexº>Ž"c‰½DisS}ŒYDis·s}/î%g6ÄÛInd6idu‡%c\"	sep¿ñwi> ';'½AllS}Y&-·s}/î%g6ÄÛ	Ind6idu‡%c\"sep¿ñwi> ';'½C`¿S}SÀsŒ!C`¿·s} -buff)+axAttOpt‰„N¯3-10Th"dev‹"³'(d' Žseºaf¶·õ) ha%	czs›u†velÜfailñ†m#tï\sw)·²qu)yŒ½Czs›u†veN¥sKN¯1ðTh"²dÉnottaJ twos›u†v"n¥‰+JSû‡CÑsŒ„®ell%ƒ`a~ n¥ o‘sû‡^Ñ%>aºmu~"pŽsÄºJ·lŠ^§Û    V‡u#´tweÄ 0 \255ónÊŒ
+Dev‹eWipeAé³ƒro÷ø ¶‡ù funcµ‡ityLZ‡Op)_‰3é³còmz íŽnºø lZ‡ op)_‰St¿t2Ex›^òm\d^aõ#dev‹"tï~¿ºæpl‹_StopŒ<Ex›^òm\d^aõ#dev‹"tï~op æpl‹_ | jŒ	P¹esR®Th³³roø Ws%ŽlñJÒm_ >aº³	availabl"Ò·ad5é³plÐeV) øidÄ†tÜo‘a j1`a‘÷V%ƒuniqu"iof·jFròRAM P`a‘V%kn`dg"whe>)·Ws%ha%´Ä loadñfrò 	RAM | ROMÛŒ
+MO|yInfoIéV%sò"exa JÒm_ ab’ºmO|Üõag"of·j.FilÄameŒ+éV%ƒfilÄam"of·j •&bootAé³ƒro÷ø ¶‡ù funcµ‡ityÆììÆìÆQ•QQQQQìQ•ìÆÆÆÆÆÆìÆìŒ®)‡S›urityM\agOÄt1urn:oasis:names:tc:xÐml:1.0:Žs’rce:Žs’rce-idu~ed_subj›t 'http://www.w3.|g/2001/XMLSchOa#îŒì.Æ./ì?  TÅHÅ€  a¼Œ®Æ@Å{  qÅ  Å Å10CTcAdæ¶ 13CSmlDmAdæ¶ 13MSmlDmAdæ¶ 14CTARMDmAdæ¶ŒÅç‚œ¦¥ê—êÑêIáÁá9åsåëåcé’A“M“Y“Ë“e”[–©™?
+?‰ß¢!£‚…‚?U?‘?ËÚÓÚ×ÚüÿÿÿÅ+‚×ˆã[êÍê
+á…áýáoå¯å'¡Q??ÇÚÏÚÕÚÙœŒ Å*}*œ¦üÿÿÿ ÅKKKKŒHÅç¢£œ¦¥ê—êÑêIáÁá9åsåëåcKK7ß¢!£üÿÿÿHÅã[êÍê
+á…áýáoå¯å'¡KˆÁ$ìÐÁBÂ$Üô´ÂBòÂöª€ÃBÃ$Èô2ÃBNÃ¬€œÃ¬
+€æÉBèÉG©€ÍB Í¬€LÏ$˜ô˜Ï¬
+€ÈÓGô0Ô¬<šÔ¬€,Õ¬€&×$¸ôØ$ØôÙ€ˆÙ$ª²€HÚ$èô(Û¬ €jÝ9ªÝG©<ÞG¨9Þ¬<ß¬ €8ß¬<˜à¬ €Êà¬<.â9Lâ$Èô&ã$ÔôHãBPãöª€„ã¬€¾ã9øã¬€Hä9´ä¬€ÿé°°¨€	 
+  	
+<åª€dåltXëŒŽŽ Æ°ª€ê(ê$êq  Ô   e  &	'(
+00) 
+0dl.
+}{!a
+"l #"-!/-:;[1=]#><?/;AB/#@<:*ð%ø% (08@HPX`hpx€ˆ˜ ¨°¸ÀÈÐØàèðø 				 	(	0	0>Z:A8	w:
+@	H	P	X	`	h	p	x	€	ˆ	œ:A	±:1˜	 	¨	°	¸	À	È	Ð	Ø	à	è	ð	ø	  (08@HPX`hpx€ˆ˜ ¨°¸ÀÈÐØàèðø Ù: (0ù:8@HPX`h¸*à*+0+X+> >@>H>Ap'Axeuser?39e5=ecom?9d8e=PolicyEngine?0207816=DMUtilBTerminalControl?0207826=FeatMgr?5a2b=drtaeabiBscppnwBdrtrvct2_2BŒµL hlx|€x|€„ˆŒ”˜œ |€„ˆŒ”˜œ ¤¨@D8<@DHLx   TXhè¨Ì 0$8DLP˜œ ¤¨¬°´¸¼ÀÄÈÌÐÔØÜàäèìðôøü  $,048<@DHLPTX\`dhlpt|€„ˆ”˜œ ¤¨¬°´¸¼ÀÄÈÌÐÔØàäèìðôøü  $(,048<@DHLTX\`dhlptx|€„ˆŒ”˜œ
